@@ -205,6 +205,7 @@ namespace Lotes_Hornitos.Classes
                 oFilter.AddEx("65213"); // Salida emision produccion
                 oFilter.AddEx("65214"); // entrada recibo de produccion
                 oFilter.AddEx("1474000006"); // entrada y salida conteo de inventario
+                oFilter.AddEx("1474000001"); // entrada y salida conteo de inventario
 
 
                 oFilter.AddEx("FRMLTE");
@@ -234,6 +235,7 @@ namespace Lotes_Hornitos.Classes
                 oFilter.AddEx("65213"); // Salida emision produccion
                 oFilter.AddEx("65214"); // entrada recibo de produccion
                 oFilter.AddEx("1474000006"); // entrada y salida conteo de inventario
+                oFilter.AddEx("1474000001"); // entrada y salida conteo de inventario
 
 
                 oFilter = oFilters.Add(SAPbouiCOM.BoEventTypes.et_FORM_CLOSE);
@@ -251,6 +253,7 @@ namespace Lotes_Hornitos.Classes
                 oFilter.AddEx("65213"); // Salida emision produccion
                 oFilter.AddEx("65214"); // entrada recibo de produccion
                 oFilter.AddEx("1474000006"); // entrada y salida conteo de inventario
+                oFilter.AddEx("1474000001"); // entrada y salida conteo de inventario
 
 
                 oFilter = oFilters.Add(SAPbouiCOM.BoEventTypes.et_FORM_DATA_LOAD);
@@ -268,6 +271,7 @@ namespace Lotes_Hornitos.Classes
                 oFilter.AddEx("65213"); // Salida emision produccion
                 oFilter.AddEx("65214"); // entrada recibo de produccion
                 oFilter.AddEx("1474000006"); // entrada y salida conteo de inventario
+                oFilter.AddEx("1474000001"); // entrada y salida conteo de inventario
 
 
                 oFilter = oFilters.Add(SAPbouiCOM.BoEventTypes.et_RIGHT_CLICK);
@@ -285,6 +289,7 @@ namespace Lotes_Hornitos.Classes
                 oFilter.AddEx("65213"); // Salida emision produccion
                 oFilter.AddEx("65214"); // entrada recibo de produccion
                 oFilter.AddEx("1474000006"); // entrada y salida conteo de inventario
+                oFilter.AddEx("1474000001"); // entrada y salida conteo de inventario
 
                 oFilter = oFilters.Add(SAPbouiCOM.BoEventTypes.et_MENU_CLICK);
                 oFilter.AddEx("143"); // entrada compras
@@ -301,6 +306,7 @@ namespace Lotes_Hornitos.Classes
                 oFilter.AddEx("65213"); // Salida emision produccion
                 oFilter.AddEx("65214"); // entrada recibo de produccion
                 oFilter.AddEx("1474000006"); // entrada y salida conteo de inventario
+                oFilter.AddEx("1474000001"); // entrada y salida conteo de inventario
 
                 oApp.SetFilter(oFilters);
 
@@ -372,7 +378,8 @@ namespace Lotes_Hornitos.Classes
                                     "141", // entrada factura de compras
                                     "65213", // Salida emision produccion
                                     "65214", // entrada recibo de produccion
-                                    "1474000006" // entrada y salida conteo de inventario
+                                    "1474000006", // entrada y salida conteo de inventario
+                                    "1474000001" // entrada y salida conteo de inventario
                                 };
                         if (formulariosPermitidos.Contains(oForm.TypeEx))
                         {
@@ -836,7 +843,7 @@ namespace Lotes_Hornitos.Classes
                                 break;
                         }
                         break;
-                    case "1474000006":// ENTRADA recuento de inventario
+                    case "1474000001":// ENTRADA recuento de inventario
                         switch (pVal.EventType)
                         {
                             case BoEventTypes.et_FORM_CLOSE:
@@ -865,13 +872,13 @@ namespace Lotes_Hornitos.Classes
                                         }
 
                                         break;
-                                        //case "BtnAddLn":
-                                        //    if (formLotesEntrada == null)
-                                        //    {
-                                        //        formLotesEntrada = new FormLotesEntrada(oCompany, oApp);
-                                        //    }
-                                        //    formLotesEntrada.AddLine(pVal);
-                                        //    break;
+                                    case "BtAddln":
+                                        if (formLotesConteo == null)
+                                        {
+                                            formLotesConteo = new FormLotesConteo(oCompany, oApp);
+                                        }
+                                        formLotesConteo.AddLine(pVal);
+                                        break;
                                 }
                                 break;
                         }
@@ -1276,7 +1283,7 @@ namespace Lotes_Hornitos.Classes
                                 break;
                         }
                         break;
-                    case "1474000006": //Recuento de inventario
+                    case "1474000001": //Recuento de inventario
                         switch (pVal.EventType)
                         {
                             case BoEventTypes.et_ITEM_PRESSED:
@@ -1288,7 +1295,7 @@ namespace Lotes_Hornitos.Classes
                                             formLotesConteo = new FormLotesConteo(oCompany, oApp);
 
                                         }
-                                        Tipo = "OIQR";
+                                        Tipo = "OINC";
                                         BubbleEvent = formLotesConteo.MostarItems(pVal, Tipo);
                                         break;
 
@@ -1709,7 +1716,7 @@ namespace Lotes_Hornitos.Classes
                                 break;
                         }
                         break;
-                    case "1474000006": //Entrada de reconteo de inventario.
+                    case "1474000001": //Entrada de reconteo de inventario.
                         switch (BusinessObjectInfo.EventType)
                         {
                             case BoEventTypes.et_FORM_DATA_ADD:
@@ -1728,6 +1735,22 @@ namespace Lotes_Hornitos.Classes
                                 formLotesConteo.formClose();
 
                                 break;
+                        }
+                        break;
+                    case "1474000006": //Entrada de Contabilización reconteo de inventario.
+                        switch (BusinessObjectInfo.EventType)
+                        {
+                            case BoEventTypes.et_FORM_DATA_ADD:
+                                if (formLotesConteo == null)
+                                {
+                                    formLotesConteo = new FormLotesConteo(oCompany, oApp);
+                                }
+
+                                Tipo = "OIQR";
+                                BubbleEvent = formLotesConteo.CrearLotesContablizacion(BusinessObjectInfo, Tipo);
+
+                                break;
+
                         }
                         break;
                 }

@@ -1,4 +1,5 @@
 ﻿using Lotes_Hornitos.Modelos;
+using SAPbobsCOM;
 using SAPbouiCOM;
 using System;
 using System.Collections.Generic;
@@ -48,7 +49,7 @@ namespace Lotes_Hornitos.Classes
 
             SAPbobsCOM.Recordset oRs = null;
 
-            double cantidad = 0;
+            double cantidad = 0, cantidadDesviacion = 0;
             string articulo = string.Empty, query = string.Empty, queryLotesSalida = string.Empty;
             string path = string.Empty;
 
@@ -66,12 +67,13 @@ namespace Lotes_Hornitos.Classes
                 grid_Sel = (Grid)oForm.Items.Item("GrdSel").Specific;
                 DT_Sel = (DataTable)oForm.DataSources.DataTables.Item("DTSel");
 
-                cantidad = Convert.ToDouble(DT_LineasDocumento.GetValue("Cantidad", pVal.Row));
+                cantidad = Convert.ToDouble(DT_LineasDocumento.GetValue("CantidadContada", pVal.Row));
+                cantidadDesviacion = Convert.ToDouble(DT_LineasDocumento.GetValue("CantidadDesviacion", pVal.Row));
 
                 // valida si hay informacion de lotes ya creados en la tabla de entradas, esto para mostrar la info de lotes en el gri de lotes creados
 
                 //Cambio por Lista y datatable
-                CargarLista(ref DT_Crear, ref DT_Sel, ListaConteo, DT_LineasDocumento.GetValue("ItemCode", pVal.Row).ToString(), DT_LineasDocumento.GetValue("Almacen", pVal.Row).ToString(), cantidad, DT_LineasDocumento.GetValue("Tipo Conteo", pVal.Row).ToString());
+                CargarLista(ref DT_Crear, ref DT_Sel, ListaConteo, DT_LineasDocumento.GetValue("ItemCode", pVal.Row).ToString(), DT_LineasDocumento.GetValue("Almacen", pVal.Row).ToString(), cantidad, DT_LineasDocumento.GetValue("Tipo Conteo", pVal.Row).ToString(), DT_LineasDocumento.GetValue("NumLinea", pVal.Row).ToString());
 
 
                 //Si no hay lotes creados continua con la informacion de lotes a crear, desde la informacion del documento de entrada.
@@ -79,7 +81,7 @@ namespace Lotes_Hornitos.Classes
                 {
 
                     Sb.Clear();
-                    switch (DT_LineasDocumento.GetValue("Tipo Conteo", pVal.Row).ToString())
+                    /*switch (DT_LineasDocumento.GetValue("Tipo Conteo", pVal.Row).ToString())
                     {
                         case "E":
                             query = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.InfoArticulosconLote.sql")).ReadToEnd();
@@ -87,11 +89,13 @@ namespace Lotes_Hornitos.Classes
                             break;
                         case "S":
                             query = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.InfoArticulosconLoteConteoSalida.sql")).ReadToEnd();
-                            query = Sb.AppendFormat(query, DT_LineasDocumento.GetValue("ItemCode", pVal.Row), DT_LineasDocumento.GetValue("Almacen", pVal.Row)).ToString();
+                            query = Sb.AppendFormat(query, DT_LineasDocumento.GetValue("ItemCode", pVal.Row), DT_LineasDocumento.GetValue("Almacen", pVal.Row), DT_LineasDocumento.GetValue("NumLinea", pVal.Row)).ToString();
 
                             break;
-                    }
+                    }*/
 
+                    query = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.InfoArticulosconLoteConteoSalida.sql")).ReadToEnd();
+                    query = Sb.AppendFormat(query, DT_LineasDocumento.GetValue("ItemCode", pVal.Row), DT_LineasDocumento.GetValue("Almacen", pVal.Row), DT_LineasDocumento.GetValue("NumLinea", pVal.Row)).ToString();
 
 
                     // carga la info en el grid de lotes a crear
@@ -116,6 +120,8 @@ namespace Lotes_Hornitos.Classes
                     oForm.Items.Item("GrdSel").Enabled = false;
                     oForm.Items.Item("BtnAgre").Enabled = false;
                     oForm.Items.Item("BtnElim").Enabled = false;
+                    oForm.Items.Item("BtAddln").Enabled = false;
+                    oForm.Items.Item("BtDelLn").Enabled = false;
 
                     for (int i = 0; i < grid_Crear.Columns.Count; i++)
                     {
@@ -128,7 +134,7 @@ namespace Lotes_Hornitos.Classes
 
                     grid_Crear.AutoResizeColumns();
 
-                    grid_Crear.Columns.Item("Cantidad").Editable = false;
+                    grid_Crear.Columns.Item("Cantidad").Editable = true;
 
 
                     //if (Convert.ToDouble( DT_Crear.GetValue("Cantidad", grid_Crear.Rows.Count - 1)) < 0)
@@ -153,40 +159,62 @@ namespace Lotes_Hornitos.Classes
                         grid_Crear.Columns.Item("Fecha Admin").TitleObject.Caption = "Fecha salida";
                     }
 
-                    //oForm.Items.Item("BtnAddLn").Enabled = true;
-                    if (DT_LineasDocumento.GetValue("Tipo Conteo", pVal.Row).ToString().Equals("S"))
-                    {
-                        grid_Crear.Columns.Item("Numero lote").Editable = false;
-                        grid_Crear.Columns.Item("Cantidad disponible").Editable = false;
-                        grid_Crear.Columns.Item("Cantidad").Editable = true;
-                        grid_Crear.Columns.Item("Fecha vence").Editable = false;
-                        grid_Crear.Columns.Item("Fecha Admin").Editable = false;
-                        grid_Crear.Columns.Item("Almacen").Editable = false;
-                        oForm.Items.Item("GrdSel").Enabled = true;
-                        oForm.Items.Item("BtnAgre").Enabled = true;
-                        oForm.Items.Item("BtnElim").Enabled = true;
-
-                    }
+                    grid_Crear.Columns.Item("Numero lote").Editable = false;
+                    grid_Crear.Columns.Item("Cantidad disponible").Editable = false;
+                    grid_Crear.Columns.Item("Cantidad").Editable = true;
+                    grid_Crear.Columns.Item("Fecha vence").Editable = false;
+                    grid_Crear.Columns.Item("Fecha Admin").Editable = false;
+                    grid_Crear.Columns.Item("Almacen").Editable = false;
+                    oForm.Items.Item("GrdSel").Enabled = true;
+                    oForm.Items.Item("BtnAgre").Enabled = true;
+                    oForm.Items.Item("BtnElim").Enabled = true;
+                    oForm.Items.Item("BtAddln").Enabled = true;
+                    oForm.Items.Item("BtDelLn").Enabled = true;
 
                 }
                 else
                 {
+                    Sb.Clear();
+                    query = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.InfoSinlotes.sql")).ReadToEnd();
+                    query = Sb.AppendFormat(query, DT_LineasDocumento.GetValue("ItemCode", pVal.Row), DT_LineasDocumento.GetValue("Tipo Doc", pVal.Row), DT_LineasDocumento.GetValue("Numero Doc", pVal.Row), cantidad, DT_LineasDocumento.GetValue("Almacen", pVal.Row)).ToString();
+
+                    DT_Crear.ExecuteQuery(query);
+
+                    grid_Crear.Item.Enabled = true;
+                    ColumnGrid = (EditTextColumn)grid_Crear.Columns.Item("Sel");
+                    ColumnGrid.Type = BoGridColumnType.gct_CheckBox;
+                    for (int i = 0; i < grid_Crear.Columns.Count; i++)
+                    {
+
+                        grid_Crear.Columns.Item(i).Editable = true;
+                        grid_Crear.Columns.Item(i).AffectsFormMode = true;
+                    }
+
+                    grid_Crear.Columns.Item("ItemCode").Visible = false;
+                    grid_Crear.Columns.Item("Tipo doc").Visible = false;
+                    grid_Crear.Columns.Item("Num Doc").Visible = false;
+                    grid_Crear.Columns.Item("Index").Visible = false;
+
+                    oForm.Items.Item("GrdSel").Enabled = true;
+                    oForm.Items.Item("BtnAgre").Enabled = true;
+                    oForm.Items.Item("BtnElim").Enabled = true;
+                    oForm.Items.Item("BtAddln").Enabled = true;
+                    oForm.Items.Item("BtDelLn").Enabled = true;
                     grid_Crear.SelectionMode = BoMatrixSelect.ms_None;
-                    grid_Crear.Item.Enabled = false;
+
                 }
 
-                if (DT_LineasDocumento.GetValue("Tipo Conteo", pVal.Row).ToString().Equals("S"))
-                {
-                    if (!DT_Sel.IsEmpty)
-                    {
-                        grid_Sel.Columns.Item("Sel").Visible = false;
-                        grid_Sel.Columns.Item("Tipo doc").Visible = false;
-                        grid_Sel.Columns.Item("Num Doc").Visible = false;
-                        grid_Sel.Columns.Item("Index").Visible = false;
-                        grid_Sel.Columns.Item("NumLinea").Visible = false;
-                    }
+                //if (DT_LineasDocumento.GetValue("Tipo Conteo", pVal.Row).ToString().Equals("S"))
+                // {
 
-                    }
+                grid_Sel.Columns.Item("Sel").Visible = false;
+                grid_Sel.Columns.Item("Tipo doc").Visible = false;
+                grid_Sel.Columns.Item("Num Doc").Visible = false;
+                grid_Sel.Columns.Item("Index").Visible = false;
+                grid_Sel.Columns.Item("NumLinea").Visible = false;
+
+
+                //}
 
                 //columns = (SAPbouiCOM.Columns)grid_Crear.Columns;
                 //column = columns.Item("Fecha vence");
@@ -220,7 +248,7 @@ namespace Lotes_Hornitos.Classes
             }
         }
 
-        private void CargarLista(ref DataTable dT_Crear, ref DataTable dT_Sel, List<ListConteo> listaConteo, string _ItemCode, string almacen, double cantidadlinea, string tipoConteo)
+        private void CargarLista(ref DataTable dT_Crear, ref DataTable dT_Sel, List<ListConteo> listaConteo, string _ItemCode, string almacen, double cantidadlinea, string tipoConteo, string RowNum)
         {
             string query = string.Empty, queryConteo = string.Empty;
             int cont = 0;
@@ -263,7 +291,7 @@ namespace Lotes_Hornitos.Classes
             if (ListLotes.Any())
             {
                 query = string.Join(" UNION ALL ", ListLotes);
-                if (tipoConteo.Equals("E"))
+                /*if (tipoConteo.Equals("E"))
                 {
                     dT_Crear.ExecuteQuery(query);
                     if (cantidadlinea > cantidadEntrada)
@@ -278,25 +306,25 @@ namespace Lotes_Hornitos.Classes
                     }
                 }
                 else
+                {*/
+                queryConteo = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.InfoArticulosconLoteConteoSalida.sql")).ReadToEnd();
+                queryConteo = Sb.AppendFormat(queryConteo, _ItemCode, almacen, RowNum).ToString();
+                Sb.Clear();
+                dT_Sel.ExecuteQuery(query);
+                dT_Crear.ExecuteQuery(queryConteo);
+
+                if (cantidadlinea > cantidadEntrada)
                 {
-                    queryConteo = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.InfoArticulosconLoteConteoSalida.sql")).ReadToEnd();
-                    queryConteo = Sb.AppendFormat(queryConteo, _ItemCode, almacen).ToString();
-                    Sb.Clear();
-                    dT_Sel.ExecuteQuery(query);
-                    dT_Crear.ExecuteQuery(queryConteo);
+                    DesdeLista = false;
 
-                    if (cantidadlinea > cantidadEntrada)
-                    {
-                        DesdeLista = false;
-
-                    }
-                    else
-                    {
-                        DesdeLista = true;
-
-                    }
                 }
-                
+                else
+                {
+                    DesdeLista = true;
+
+                }
+                //}
+
 
             }
             else
@@ -396,7 +424,7 @@ namespace Lotes_Hornitos.Classes
                     {
                         if (DT_Lineas.GetValue("Sel", i).Equals("Y"))
                         {
-                            if (DT_Lineas.GetValue("Tipo Conteo", i).ToString().Equals("E"))
+                            /*if (DT_Lineas.GetValue("Tipo Conteo", i).ToString().Equals("E"))
                             {
                                 for (int j = 0; j <= DT_Crear.Rows.Count - 1; j++)
                                 {
@@ -422,7 +450,7 @@ namespace Lotes_Hornitos.Classes
 
 
                                     //valida que no haya lotes iguales dentro del grid
-                                    for (int k = i + 1; k <= DT_Crear.Rows.Count - 1; k++)
+                                    for (int k = j + 1; k <= DT_Crear.Rows.Count - 1; k++)
                                     {
                                         if (DT_Crear.GetValue("Numero lote", k).ToString().Equals(loteAIngresar))
                                         {
@@ -459,7 +487,7 @@ namespace Lotes_Hornitos.Classes
                                 {
                                     if (DT_Lineas.GetValue("Sel", j).ToString().Equals("Y"))
                                     {
-                                        cantidadLineas = Convert.ToDouble(DT_Lineas.GetValue("Cantidad", j));
+                                        cantidadLineas = Convert.ToDouble(DT_Lineas.GetValue("CantidadContada", j));
                                         rowDtLines = j;
                                         break;
                                     }
@@ -480,113 +508,113 @@ namespace Lotes_Hornitos.Classes
 
                             }
                             else
+                            {*/
+                            //Capturar el valor principal de cantidad de la salida
+                            cantidadLineas = Math.Abs(Convert.ToDouble(DT_Lineas.GetValue("CantidadContada", i)));
+
+                            //Capturar el valor de cantidad de lote ingresado como disponible en seleccionados
+                            for (int j = 0; j <= grid_Seleccion.Rows.Count - 1; j++)
                             {
-                                //Capturar el valor principal de cantidad de la salida
-                                cantidadLineas = Math.Abs(Convert.ToDouble(DT_Lineas.GetValue("Cantidad", i)));
 
-                                //Capturar el valor de cantidad de lote ingresado como disponible en seleccionados
-                                for (int j = 0; j <= grid_Seleccion.Rows.Count - 1; j++)
-                                {
+                                cantidadDisponibleSelecionada += Convert.ToDouble(DT_Seleccion.GetValue("Cantidad", j));
 
-                                    cantidadDisponibleSelecionada += Convert.ToDouble(DT_Seleccion.GetValue("Cantidad", j));
-
-                                }
-
-                                //Capturar el valor de cantidad de lote ingresado como disponible en disponibles
-                                for (int j = 0; j <= grid_Crear.Rows.Count - 1; j++)
-                                {
-                                    if (DT_Crear.GetValue("Sel", j).ToString().Equals("Y"))
-                                    {
-                                        cantidadDisponible += Convert.ToDouble(DT_Crear.GetValue("Cantidad", j));
-                                    }
-                                }
-
-                                //Validar que las cantidades entre principal y disponble ingresada sean iguales
-                                if (!cantidadLineas.Equals(cantidadDisponible))
-                                {
-                                    oApp.MessageBox("La cantidad del lote ingresado debe ser igual a la cantidad del documento.", 1, "Ok");
-                                    result = false;
-                                    return result;
-                                }
-
-                                //Validar que las cantidades entre Disponible y Selecionadas ingresada sean iguales
-                                if (!cantidadDisponibleSelecionada.Equals(cantidadDisponible))
-                                {
-                                    oApp.MessageBox("La cantidad del lote ingresado en disponibles debe ser igual a la cantidad del lote ingresado en seleccionados.", 1, "Ok");
-                                    result = false;
-                                    return result;
-                                }
-
-
-                                //validar que las cantidades entre disponible y seleccionados sean iguales por linea de cada lote
-                                for (int j = 0; j <= grid_Crear.Rows.Count - 1; j++)
-                                {
-                                    if (DT_Crear.GetValue("Sel", j).ToString().Equals("Y"))
-                                    {
-                                        cantidadDisponibleLinea = Convert.ToDouble(DT_Crear.GetValue("Cantidad", j));
-                                        LoteDisponibleLinea = DT_Crear.GetValue("Numero lote", j).ToString();
-
-                                        for (int k = 0; k <= grid_Seleccion.Rows.Count - 1; k++)
-                                        {
-                                            var numlinea = (int)DT_Seleccion.GetValue("NumLinea", k);
-                                            if (numlinea.Equals(j))
-                                            {
-                                                cantidadDisponibleSelecionadaLinea = Convert.ToDouble(DT_Seleccion.GetValue("Cantidad", k));
-                                                LoteSeleccionadoLinea = DT_Seleccion.GetValue("Numero lote", k).ToString();
-                                                break;
-                                            }
-
-                                        }
-                                        if (!cantidadDisponibleLinea.Equals(cantidadDisponibleSelecionadaLinea))
-                                        {
-                                            oApp.MessageBox("La cantidad del lote ingresado en disponibles por líneas difiere de lo ingresado en seleccionados.", 1, "Ok");
-                                            result = false;
-                                            return result;
-                                        }
-
-                                        //Validar que los lotes sean iguales por linea Disponible y seleccionada
-                                        if (!LoteDisponibleLinea.Equals(LoteSeleccionadoLinea))
-                                        {
-                                            oApp.MessageBox("Existe diferencia entre los lotes seleccionados en disponible y los agregados en seleccionados.", 1, "Ok");
-                                            result = false;
-                                            return result;
-                                        }
-                                    }
-                                }
-
-                                ////validar que los lotes entre disponible y seleccionados sean iguales por linea
-                                //for (int i = 0; i <= grid_Disponible.Rows.Count - 1; i++)
-                                //{
-                                //    if (DT_Disponible.GetValue("Sel", i).ToString().Equals("Y"))
-                                //    {
-                                //        LoteDisponibleLinea = DT_Disponible.GetValue("Numero lote", i).ToString();
-
-                                //        existelote = false;
-                                //        for (int j = 0; j <= grid_Seleccion.Rows.Count - 1; j++)
-                                //        {
-
-                                //            LoteSeleccionadoLinea = DT_Seleccion.GetValue("Numero lote", j).ToString();
-                                //            //Validar que los lotes sean iguales por linea Disponible y seleccionada
-
-                                //            if (LoteDisponibleLinea.Equals(LoteSeleccionadoLinea))
-                                //            {
-                                //                existelote = true;
-                                //                break;
-                                //            }                                    
-                                //        }
-                                //    }
-                                //}
-
-                                //if (!existelote)
-                                //{
-                                //    oApp.MessageBox("Existe diferencia entre los lotes seleccionados en disponible y los agregados en seleccionados.", 1, "Ok");
-                                //    result = false;
-                                //    return result;
-                                //}
-
-
-                                AddLotesSalidaConteoToLits(DT_Seleccion, grid_Lineas, DT_Lineas, DT_Lineas.GetValue("Tipo Conteo", i).ToString());
                             }
+
+                            //Capturar el valor de cantidad de lote ingresado como disponible en disponibles
+                            for (int j = 0; j <= grid_Crear.Rows.Count - 1; j++)
+                            {
+                                if (DT_Crear.GetValue("Sel", j).ToString().Equals("Y"))
+                                {
+                                    cantidadDisponible += Convert.ToDouble(DT_Crear.GetValue("Cantidad", j));
+                                }
+                            }
+
+                            //Validar que las cantidades entre principal y disponble ingresada sean iguales
+                            if (!cantidadLineas.Equals(cantidadDisponible))
+                            {
+                                oApp.MessageBox("La cantidad del lote ingresado debe ser igual a la cantidad del documento.", 1, "Ok");
+                                result = false;
+                                return result;
+                            }
+
+                            //Validar que las cantidades entre Disponible y Selecionadas ingresada sean iguales
+                            if (!cantidadDisponibleSelecionada.Equals(cantidadDisponible))
+                            {
+                                oApp.MessageBox("La cantidad del lote ingresado en disponibles debe ser igual a la cantidad del lote ingresado en seleccionados.", 1, "Ok");
+                                result = false;
+                                return result;
+                            }
+
+
+                            //validar que las cantidades entre disponible y seleccionados sean iguales por linea de cada lote
+                            for (int j = 0; j <= grid_Crear.Rows.Count - 1; j++)
+                            {
+                                if (DT_Crear.GetValue("Sel", j).ToString().Equals("Y"))
+                                {
+                                    cantidadDisponibleLinea = Convert.ToDouble(DT_Crear.GetValue("Cantidad", j));
+                                    LoteDisponibleLinea = DT_Crear.GetValue("Numero lote", j).ToString();
+
+                                    for (int k = 0; k <= grid_Seleccion.Rows.Count - 1; k++)
+                                    {
+                                        var numlinea = (int)DT_Seleccion.GetValue("NumLinea", k);
+                                        if (numlinea.Equals(j))
+                                        {
+                                            cantidadDisponibleSelecionadaLinea = Convert.ToDouble(DT_Seleccion.GetValue("Cantidad", k));
+                                            LoteSeleccionadoLinea = DT_Seleccion.GetValue("Numero lote", k).ToString();
+                                            break;
+                                        }
+
+                                    }
+                                    if (!cantidadDisponibleLinea.Equals(cantidadDisponibleSelecionadaLinea))
+                                    {
+                                        oApp.MessageBox("La cantidad del lote ingresado en disponibles por líneas difiere de lo ingresado en seleccionados.", 1, "Ok");
+                                        result = false;
+                                        return result;
+                                    }
+
+                                    //Validar que los lotes sean iguales por linea Disponible y seleccionada
+                                    if (!LoteDisponibleLinea.Equals(LoteSeleccionadoLinea))
+                                    {
+                                        oApp.MessageBox("Existe diferencia entre los lotes seleccionados en disponible y los agregados en seleccionados.", 1, "Ok");
+                                        result = false;
+                                        return result;
+                                    }
+                                }
+                            }
+
+                            ////validar que los lotes entre disponible y seleccionados sean iguales por linea
+                            //for (int i = 0; i <= grid_Disponible.Rows.Count - 1; i++)
+                            //{
+                            //    if (DT_Disponible.GetValue("Sel", i).ToString().Equals("Y"))
+                            //    {
+                            //        LoteDisponibleLinea = DT_Disponible.GetValue("Numero lote", i).ToString();
+
+                            //        existelote = false;
+                            //        for (int j = 0; j <= grid_Seleccion.Rows.Count - 1; j++)
+                            //        {
+
+                            //            LoteSeleccionadoLinea = DT_Seleccion.GetValue("Numero lote", j).ToString();
+                            //            //Validar que los lotes sean iguales por linea Disponible y seleccionada
+
+                            //            if (LoteDisponibleLinea.Equals(LoteSeleccionadoLinea))
+                            //            {
+                            //                existelote = true;
+                            //                break;
+                            //            }                                    
+                            //        }
+                            //    }
+                            //}
+
+                            //if (!existelote)
+                            //{
+                            //    oApp.MessageBox("Existe diferencia entre los lotes seleccionados en disponible y los agregados en seleccionados.", 1, "Ok");
+                            //    result = false;
+                            //    return result;
+                            //}
+
+
+                            AddLotesSalidaConteoToLits(DT_Seleccion, grid_Lineas, DT_Lineas, DT_Lineas.GetValue("Tipo Conteo", i).ToString());
+                            //}
                         }
 
                     }
@@ -865,7 +893,7 @@ namespace Lotes_Hornitos.Classes
                                 {
                                     //if (item.CantLote.Equals(Math.Abs(Convert.ToDouble(oRs.Fields.Item("Cantidad").Value))))
                                     //{
-                                        existeenconsulta = true;
+                                    existeenconsulta = true;
                                     //}
                                 }
                             }
@@ -924,7 +952,8 @@ namespace Lotes_Hornitos.Classes
             SAPbouiCOM.Form Entrada = null;
             SAPbouiCOM.Matrix LineasEntrada = null;
             SAPbouiCOM.EditText oEditText = null;
-            SAPbouiCOM.EditText oCantidad = null;
+            SAPbouiCOM.EditText oCantidadContada = null;
+            SAPbouiCOM.EditText oCantidadDesviacion = null;
             SAPbouiCOM.EditText oAlmacen = null;
             SAPbouiCOM.EditText oDocNum = null;
             SAPbouiCOM.EditText RowNumber = null;
@@ -933,7 +962,7 @@ namespace Lotes_Hornitos.Classes
             SAPbouiCOM.EditText BaseType = null;
 
 
-            double cantidad = 0;
+            double cantidadContada = 0, cantidadDesviacion = 0;
             //string cantidad = string.Empty;
             bool result = false;
             List<string> Items = new List<string>();
@@ -947,7 +976,7 @@ namespace Lotes_Hornitos.Classes
 
                 if (!Entrada.Mode.Equals(BoFormMode.fm_ADD_MODE)) return true;
 
-                LineasEntrada = (SAPbouiCOM.Matrix)Entrada.Items.Item("1470000022").Specific;
+                LineasEntrada = (SAPbouiCOM.Matrix)Entrada.Items.Item("1470000021").Specific;
 
 
                 query = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.ArticulosconLoteConteo.sql")).ReadToEnd();
@@ -961,16 +990,18 @@ namespace Lotes_Hornitos.Classes
                     if (!string.IsNullOrEmpty(oEditText.String))
                     {
 
-                        oCantidad = (SAPbouiCOM.EditText)LineasEntrada.Columns.Item("1470000063").Cells.Item(i).Specific;
+                        oCantidadDesviacion = (SAPbouiCOM.EditText)LineasEntrada.Columns.Item("1470000031").Cells.Item(i).Specific;
+                        oCantidadContada = (SAPbouiCOM.EditText)LineasEntrada.Columns.Item("1470000013").Cells.Item(i).Specific;
 
-                        oAlmacen = (SAPbouiCOM.EditText)LineasEntrada.Columns.Item("1470000005").Cells.Item(i).Specific;
+                        oAlmacen = (SAPbouiCOM.EditText)LineasEntrada.Columns.Item("1470000007").Cells.Item(i).Specific;
 
-                        oDocNum = (SAPbouiCOM.EditText)Entrada.Items.Item("1470000011").Specific;
+                        oDocNum = (SAPbouiCOM.EditText)Entrada.Items.Item("1470000016").Specific;
 
                         RowNumber = (SAPbouiCOM.EditText)LineasEntrada.Columns.Item("1470000000").Cells.Item(i).Specific;
 
-                        cantidad = Ini.ConvertToSystemFormat(oCantidad.String);
-                        Items.Add(Sb.AppendFormat(query, oEditText.String, oDocNum.String, oAlmacen.String, cantidad, Tipo, RowNumber.Value).ToString());
+                        cantidadContada = Ini.ConvertToSystemFormat(oCantidadContada.String);
+                        cantidadDesviacion = Ini.ConvertToSystemFormat(oCantidadDesviacion.String);
+                        Items.Add(Sb.AppendFormat(query, oEditText.String, oDocNum.String, oAlmacen.String, cantidadDesviacion, Tipo, RowNumber.Value, cantidadContada).ToString());
                         Sb.Clear();
                         System.Console.WriteLine(oEditText.String);
 
@@ -1003,7 +1034,8 @@ namespace Lotes_Hornitos.Classes
                 Ini.ReleaseCOMObjetc(Entrada);
                 Ini.ReleaseCOMObjetc(LineasEntrada);
                 Ini.ReleaseCOMObjetc(oEditText);
-                Ini.ReleaseCOMObjetc(oCantidad);
+                Ini.ReleaseCOMObjetc(oCantidadContada);
+                Ini.ReleaseCOMObjetc(oCantidadDesviacion);
                 Ini.ReleaseCOMObjetc(oAlmacen);
                 Ini.ReleaseCOMObjetc(oDocNum);
                 Ini.ReleaseCOMObjetc(RowNumber);
@@ -1057,6 +1089,21 @@ namespace Lotes_Hornitos.Classes
 
                 oXmlDocument.LoadXml(stringForm);
                 FormUID = oXmlDocument.SelectSingleNode("/application/forms/action/form | /Application/forms/action/form").Attributes["uid"].Value;
+                // CORRECCION: si la ventana ya estaba abierta (por ejemplo el
+                // usuario vuelve a pedir el formulario sin haberlo cerrado), se
+                // cierra primero para poder abrirla de nuevo limpia. Antes esto
+                // lanzaba "Form - already exists [66000-11]".
+                try
+                {
+                    SAPbouiCOM.Form oFormExistente = oApp.Forms.Item(FormUID);
+                    oFormExistente.Close();
+                    Ini.ReleaseCOMObjetc(oFormExistente);
+                }
+                catch
+                {
+                    // No existe todavía, es el caso normal. No hay nada que hacer.
+                }
+
                 oApp.LoadBatchActions(ref stringForm);
 
                 oForm = oApp.Forms.Item(FormUID);
@@ -1103,7 +1150,9 @@ namespace Lotes_Hornitos.Classes
                     grid_LineasDoc.Columns.Item("Sel").Editable = true;
                     grid_LineasDoc.Columns.Item("Tipo Doc").Visible = false;
                     grid_LineasDoc.Columns.Item("Tipo Conteo").Visible = false;
+                    grid_LineasDoc.Columns.Item("CantidadDesviacion").Visible = false;
                     grid_LineasDoc.Columns.Item("ItemCode").TitleObject.Caption = "Número de articulo";
+                    grid_LineasDoc.Columns.Item("CantidadContada").TitleObject.Caption = "Cantidad Contada";
                     //grid_LineasDoc.Columns.Item("Cantidad solicitada").TitleObject.Caption = "Cantidad";
                     grid_LineasDoc.Columns.Item("Numero Doc").TitleObject.Caption = "Número documento";
                     grid_LineasDoc.AutoResizeColumns();
@@ -1152,71 +1201,72 @@ namespace Lotes_Hornitos.Classes
                 {
                     var item = ListaConteo[i];
 
-                    if (item.TipoConteo.Equals("E"))
+
+                    Lotes = oCompany.UserTables.Item("CLC_LTSSATEMP");
+
+                    Lotes.Name = item.ItemCode;
+                    Lotes.UserFields.Fields.Item("U_TipDoc").Value = item.TipDoc;
+                    Lotes.UserFields.Fields.Item("U_NumDoc").Value = item.NumDoc;
+                    Lotes.UserFields.Fields.Item("U_NumLot").Value = item.NumLot;
+                    Lotes.UserFields.Fields.Item("U_CantLote").Value = item.CantLote;
+                    Lotes.UserFields.Fields.Item("U_FchVenLt").Value = item.FchVenLt;
+                    Lotes.UserFields.Fields.Item("U_FchAdmLt").Value = item.FchAdmLt;
+                    Lotes.UserFields.Fields.Item("U_almacen").Value = item.almacen;
+                    Lotes.UserFields.Fields.Item("U_TipoCont").Value = item.TipoConteo;
+                    Lotes.UserFields.Fields.Item("U_TpDocEnt").Value = item.TipoDocumentoEntrada;
+                    Lotes.UserFields.Fields.Item("U_NmDocEnt").Value = item.NumeroDocumentoEntrada;
+                    Lotes.UserFields.Fields.Item("U_RowNum").Value = item.NumLinea;
+
+                    if (Lotes.Add().Equals(0))
                     {
-                        Lotes = oCompany.UserTables.Item("CLC_LTS");
+                        Console.WriteLine($"Datos agregados a tabla entradas lotes exitosamente {item.ItemCode} - {item.TipDoc} - {item.NumDoc} - {item.NumLot}");
 
-                        Lotes.Name = item.ItemCode;
-                        Lotes.UserFields.Fields.Item("U_TipDoc").Value = item.TipDoc;
-                        Lotes.UserFields.Fields.Item("U_NumDoc").Value = item.NumDoc;
-                        Lotes.UserFields.Fields.Item("U_NumLot").Value = item.NumLot;
-                        Lotes.UserFields.Fields.Item("U_CantLote").Value = item.CantLote;
-                        Lotes.UserFields.Fields.Item("U_FchVenLt").Value = item.FchVenLt;
-                        Lotes.UserFields.Fields.Item("U_FchAdmLt").Value = item.FchAdmLt;
-                        Lotes.UserFields.Fields.Item("U_almacen").Value = item.almacen;
-
-                        if (Lotes.Add().Equals(0))
-                        {
-                            Console.WriteLine($"Datos agregados a tabla entradas lotes exitosamente {item.ItemCode} - {item.TipDoc} - {item.NumDoc} - {item.NumLot}");
-
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Error al agregar datos a tabla entrada de lotes. {oCompany.GetLastErrorDescription()}. {item.ItemCode} - {item.TipDoc} - {item.NumDoc} - {item.NumLot}");
-                            res = false;
-                            break;
-                        }
                     }
                     else
                     {
-                        Lotes = oCompany.UserTables.Item("CLC_LTSSA");
-
-                        Lotes.Name = item.ItemCode;
-                        Lotes.UserFields.Fields.Item("U_TipDoc").Value = item.TipDoc;
-                        Lotes.UserFields.Fields.Item("U_NumDoc").Value = item.NumDoc;
-                        Lotes.UserFields.Fields.Item("U_NumLot").Value = item.NumLot;
-                        Lotes.UserFields.Fields.Item("U_Cantidad").Value = Math.Abs(item.CantLote);
-                        Lotes.UserFields.Fields.Item("U_FchSal").Value = DateTime.Now;
-                        Lotes.UserFields.Fields.Item("U_almacen").Value = item.almacen;
-
-                        if (Lotes.Add().Equals(0))
-                        {
-                            Console.WriteLine($"Datos agregados a tabla salidas lotes exitosamente {item.ItemCode} - {item.TipDoc} - {item.NumDoc} - {item.NumLot}");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Error al agregar datos a tabla salidas de lotes. {oCompany.GetLastErrorDescription()}. {item.ItemCode} - {item.TipDoc} - {item.NumDoc} - {item.NumLot}");
-                            res = false;
-                            break;
-                        }
-
-
-                        //Agregar a la lista de update los valores de cada linea
-                        Sb.Clear();
-                        query = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.UpdateInfoConteo.sql")).ReadToEnd();
-                        query = Sb.AppendFormat(query, Math.Abs(item.CantLote), item.ItemCode, item.TipoDocumentoEntrada, item.NumeroDocumentoEntrada, item.NumLot, item.almacen).ToString();
-
-                        ListaUpdateEntrada.Add(query);
-                        Sb.Clear();
-
-
+                        Console.WriteLine($"Error al agregar datos a tabla entrada de lotes. {oCompany.GetLastErrorDescription()}. {item.ItemCode} - {item.TipDoc} - {item.NumDoc} - {item.NumLot}");
+                        res = false;
+                        break;
                     }
+
+                    //Lotes = oCompany.UserTables.Item("CLC_LTSSA");
+
+                    //Lotes.Name = item.ItemCode;
+                    //Lotes.UserFields.Fields.Item("U_TipDoc").Value = item.TipDoc;
+                    //Lotes.UserFields.Fields.Item("U_NumDoc").Value = item.NumDoc;
+                    //Lotes.UserFields.Fields.Item("U_NumLot").Value = item.NumLot;
+                    //Lotes.UserFields.Fields.Item("U_Cantidad").Value = Math.Abs(item.CantLote);
+                    //Lotes.UserFields.Fields.Item("U_FchSal").Value = DateTime.Now;
+                    //Lotes.UserFields.Fields.Item("U_almacen").Value = item.almacen;
+
+                    //if (Lotes.Add().Equals(0))
+                    //{
+                    //    Console.WriteLine($"Datos agregados a tabla salidas lotes exitosamente {item.ItemCode} - {item.TipDoc} - {item.NumDoc} - {item.NumLot}");
+                    //}
+                    //else
+                    //{
+                    //    Console.WriteLine($"Error al agregar datos a tabla salidas de lotes. {oCompany.GetLastErrorDescription()}. {item.ItemCode} - {item.TipDoc} - {item.NumDoc} - {item.NumLot}");
+                    //    res = false;
+                    //    break;
+                    //}
+
+
+                    ////Agregar a la lista de update los valores de cada linea
+                    //Sb.Clear();
+                    //query = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.UpdateInfoConteo.sql")).ReadToEnd();
+                    //query = Sb.AppendFormat(query, Math.Abs(item.CantLote), item.ItemCode, item.TipoDocumentoEntrada, item.NumeroDocumentoEntrada, item.NumLot, item.almacen).ToString();
+
+                    //ListaUpdateEntrada.Add(query);
+                    //Sb.Clear();
+
+
+
 
 
                 }
 
-                //update de tabla de creacion lotes para descontar las cantidades por lote.
-                UpdateTablaEntradaLotes(ListaUpdateEntrada);
+                ////update de tabla de creacion lotes para descontar las cantidades por lote.
+                //UpdateTablaEntradaLotes(ListaUpdateEntrada);
 
                 ListaConteo.Clear();
                 return res;
@@ -1331,11 +1381,11 @@ namespace Lotes_Hornitos.Classes
                         cantidadDispo = Convert.ToDouble(catidaDisponible);
                         cantidadSel = Convert.ToDouble(catidaIngresada);
 
-                        if (cantidadDispo < cantidadSel)
+                        /*if (cantidadDispo < cantidadSel)
                         {
                             oApp.MessageBox($"La cantidad ingresada es mayor a la cantidad disponible.", 1, "Ok");
                             return;
-                        }
+                        }*/
 
                         if (cantidadSel > 0)
                         {
@@ -1481,6 +1531,649 @@ namespace Lotes_Hornitos.Classes
                 Ini.ReleaseCOMObjetc(DT_Disponible);
                 Ini.ReleaseCOMObjetc(grid_Seleccion);
                 Ini.ReleaseCOMObjetc(DT_Seleccion);
+            }
+
+        }
+
+        internal bool CrearLotesContablizacion(BusinessObjectInfo businessObjectInfo, string Tipo)
+        {
+            bool res = true;
+            SAPbobsCOM.UserTable Lotes = null;
+            SAPbobsCOM.Recordset oRs = null;
+            SAPbobsCOM.Recordset oRs1 = null;
+            SAPbouiCOM.Form contabilizacion = null;
+            SAPbouiCOM.Matrix LineasContabilizacion = null;
+            SAPbouiCOM.EditText oEditText = null;
+            SAPbouiCOM.EditText oCantidad = null;
+            SAPbouiCOM.EditText oAlmacen = null;
+            SAPbouiCOM.EditText oDocNum = null;
+            SAPbouiCOM.EditText oDocNumConteo = null;
+            SAPbouiCOM.EditText RowNumber = null;
+
+            List<string> ListaUpdateEntrada = new List<string>();
+            List<string> ListaDeleteConteo = new List<string>();
+            var Sb = new System.Text.StringBuilder();
+            string query = string.Empty, queryDelete = string.Empty, querylotes = string.Empty, almacen = string.Empty, item = string.Empty;
+            List<string> ItemsConteo = new List<string>();
+            List<string> ListaLotes = new List<string>();
+            List<string> ListaLotestratados = new List<string>();
+
+            double cantidad = 0;
+
+            try
+            {
+                contabilizacion = oApp.Forms.Item(businessObjectInfo.FormUID);
+                oRs = (SAPbobsCOM.Recordset)oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+                oRs1 = (SAPbobsCOM.Recordset)oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+
+                if (!contabilizacion.Mode.Equals(BoFormMode.fm_ADD_MODE)) return true;
+
+
+                LineasContabilizacion = (SAPbouiCOM.Matrix)contabilizacion.Items.Item("1470000022").Specific;
+
+
+                for (int i = 1; i <= LineasContabilizacion.RowCount; i++)
+                {
+                    Sb.Clear();
+                    query = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.InfoConteo.sql")).ReadToEnd();
+
+                    oEditText = (SAPbouiCOM.EditText)LineasContabilizacion.Columns.Item("1470000001").Cells.Item(i).Specific;
+
+                    /*Validar antes de realizar la creacion
+                    1. Validar los lotes que no estan en el conteo y que si estan en la tabla de entradas
+                      - si el lote no esta y tiene valor mayor a cero se debe realizar la salida del lote agregandolo a la tabla de salidas con su respectivo valor de la tabal de entradas                 
+                      - si el lote existe se debe validar:
+                           * si el valor de conteo es igual al valor de cantidad de entrada: no hacer nada
+                           * si el valor de cantidad de conteo en mayor: Sacar la diferencia entre la cantidad conteo y entrada y el valor restante como es mayor se debe agregar a la tabal de entradas como linea adicional y no actualizar el valor actual de entradas
+                           * si el valor es menor: realizar una salida por la diferencia entre lo contado y la cantidad de la tabla de entradas, tomando el valor de lote actual y agregando una linea en la tabla salidas y actualizar el valor de la cantidad en tabal entrada.
+                     2. El lote no esta en tabla pero si en conteo
+                       * Se debe crear una enrada con el valor del lote.
+                   */
+
+
+                    if (!string.IsNullOrEmpty(oEditText.String))
+                    {
+
+                        oAlmacen = (SAPbouiCOM.EditText)LineasContabilizacion.Columns.Item("1470000005").Cells.Item(i).Specific;
+
+                        oCantidad = (SAPbouiCOM.EditText)LineasContabilizacion.Columns.Item("1470000009").Cells.Item(i).Specific;
+
+                        oDocNum = (SAPbouiCOM.EditText)contabilizacion.Items.Item("1470000011").Specific;
+
+                        oDocNumConteo = (SAPbouiCOM.EditText)LineasContabilizacion.Columns.Item("1470000043").Cells.Item(i).Specific;
+
+                        RowNumber = (SAPbouiCOM.EditText)LineasContabilizacion.Columns.Item("1470000045").Cells.Item(i).Specific;
+
+                        cantidad = Ini.ConvertToSystemFormat(oCantidad.String);
+
+                        Sb.Clear();
+                        //ItemsConteo.Add(Sb.AppendFormat(query, oEditText.String, oDocNum.String, oAlmacen.String, Tipo, oDocNumConteo.String, cantidad).ToString());
+                        query = Sb.AppendFormat(query, oEditText.String, oDocNum.String, oAlmacen.String, Tipo, oDocNumConteo.String, cantidad).ToString();
+
+                        //aca tengo la info de la tabla temp de cada item que se va a contabilizar
+                        oRs.DoQuery(query);
+
+                        if (oRs != null)
+                        {
+                            oRs.MoveFirst();
+                            almacen = oRs.Fields.Item("U_almacen").Value.ToString();
+                            item = oRs.Fields.Item("Name").Value.ToString();
+
+                            for (int j = 1; j <= oRs.RecordCount; j++)
+                            {
+                                ListaLotes.Add(oRs.Fields.Item("U_NumLot").Value.ToString());
+                                oRs.MoveNext();
+                            }
+
+                            oRs.MoveFirst();
+
+
+                            //consulto los lotes que no estan en el conteo y que existen para este item en la tabla entradas con cantidad mayor a cero
+                            Sb.Clear();
+                            querylotes = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.lotestablaentrada.sql")).ReadToEnd();
+                            querylotes = Sb.AppendFormat(querylotes, oEditText.String, oAlmacen.String, string.Join(",", ListaLotes.Select(x => $"'{x}'")), oDocNumConteo.String, oDocNum.String).ToString();
+                            oRs1.DoQuery(querylotes);
+
+                            //si tiene datos es porque hay lotes en entradas que no se contaron, se deben sacar
+                            if (oRs1 != null)
+                            {
+                                oRs1.MoveFirst();
+
+                                if (!oRs1.RecordCount.Equals(0))
+                                {
+                                    for (int j = 1; j <= oRs1.RecordCount; j++)
+                                    {
+                                        AddTablalotes(ref Lotes, "S", oRs1.Fields.Item("ItemCode").Value.ToString(), oRs1.Fields.Item("Tipo Doc").Value.ToString(), oRs1.Fields.Item("NumDoc conta").Value.ToString(), oRs1.Fields.Item("Numero lote").Value.ToString(),
+                                                        oRs1.Fields.Item("Cantidad").Value, "", "", oRs1.Fields.Item("U_almacen").Value.ToString(), oRs1.Fields.Item("U_NumDoc").Value.ToString(), oRs1.Fields.Item("NumDoc conteo").Value.ToString(), oRs1.Fields.Item("U_TipDoc").Value.ToString());
+                                        oRs1.MoveNext();
+
+                                    }
+                                }
+                            }
+
+                            //validar que los lotes en contados esten en la tabla de entrada, Si no esta se debe hacer una entrada.
+                            foreach (string lote in ListaLotes)
+                            {
+                                Sb.Clear();
+                                querylotes = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.loteEncontradoEntrada.sql")).ReadToEnd();
+                                querylotes = Sb.AppendFormat(querylotes, lote).ToString();
+                                oRs1.DoQuery(querylotes);
+
+                                // NO existe el lote en tabla entradas.
+                                if (oRs1 != null)
+                                {
+                                    oRs1.MoveFirst();
+                                    if (oRs1.RecordCount.Equals(0))
+                                    {
+                                        ListaLotestratados.Add(lote);
+                                        oRs.MoveFirst();
+                                        for (int j = 1; j <= oRs.RecordCount; j++)
+                                        {
+                                            if (oRs.Fields.Item("U_NumLot").Value.ToString().Equals(lote))
+                                            {
+                                                AddTablalotes(ref Lotes, "E", oRs.Fields.Item("Name").Value.ToString(), oRs.Fields.Item("TipDoc").Value.ToString(), oRs.Fields.Item("NumDoc").Value.ToString(), lote,
+                                                    oRs.Fields.Item("U_CantLote").Value, oRs.Fields.Item("U_FchVenLt").Value.ToString(), oRs.Fields.Item("U_FchAdmLt").Value.ToString(), oRs.Fields.Item("U_almacen").Value.ToString(), oRs.Fields.Item("U_NmDocEnt").Value.ToString(), oRs.Fields.Item("NumDoc2").Value.ToString(), "");
+                                            }
+                                            oRs.MoveNext();
+                                        }
+                                    }
+                                    //si existe en la tabla de entrada
+                                    else
+                                    {
+                                        Sb.Clear();
+                                        querylotes = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.ConsultaCantidadenentrada.sql")).ReadToEnd();
+                                        querylotes = Sb.AppendFormat(querylotes, item, lote, almacen).ToString();
+                                        oRs1.DoQuery(querylotes);
+                                        if (oRs1 != null)
+                                        {
+                                            oRs1.MoveFirst();
+                                            if (oRs.RecordCount > 0)
+                                            {
+                                                oRs.MoveFirst();
+                                                for (int j = 1; j <= oRs.RecordCount; j++)
+                                                {
+                                                    if (oRs.Fields.Item("U_NumLot").Value.ToString().Equals(lote))
+                                                    {
+                                                        double cantidadentrada = Convert.ToDouble(oRs1.Fields.Item("U_CantLote").Value);
+                                                        double cantidadContada = Convert.ToDouble(oRs.Fields.Item("U_CantLote").Value);
+
+                                                        var difCantidad = cantidadentrada - cantidadContada; // restar la cantidad de la entrada vs la cantidad contada
+
+                                                        // Buscar el primer code de la tabla y hacer el update con ese code para dejar solo una linea con el vlor conytado por lote, eliminar las demas lineas con diferente code y los mismos valores.
+                                                        Sb.Clear();
+                                                        querylotes = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.GetCodeEntradas.sql")).ReadToEnd();
+                                                        querylotes = Sb.AppendFormat(querylotes, oRs.Fields.Item("Name").Value.ToString(), lote, oRs.Fields.Item("U_almacen").Value.ToString()).ToString();
+                                                        oRs1.DoQuery(querylotes);
+
+                                                        if (!difCantidad.Equals(0))
+                                                        {
+                                                            if (difCantidad < 0)
+                                                            {
+                                                                // la cantidad del lote contado es mayor a la cantidad del lote en la entrada debe hacer una entrada por la diferenci entre la entrada y lo contado
+
+                                                                AddTablalotes(ref Lotes, "E", oRs.Fields.Item("Name").Value.ToString(), oRs.Fields.Item("TipDoc").Value.ToString(), oRs.Fields.Item("NumDoc").Value.ToString(), lote,
+                                                                Math.Abs(difCantidad), oRs.Fields.Item("U_FchVenLt").Value.ToString(), oRs.Fields.Item("U_FchAdmLt").Value.ToString(), oRs.Fields.Item("U_almacen").Value.ToString(), oRs.Fields.Item("U_NmDocEnt").Value.ToString(), oRs.Fields.Item("NumDoc2").Value.ToString(), "");
+                                                            }
+                                                            else
+                                                            {
+                                                                AddTablalotes(ref Lotes, "S", oRs.Fields.Item("Name").Value.ToString(), oRs.Fields.Item("TipDoc").Value.ToString(), oRs.Fields.Item("NumDoc").Value.ToString(), lote,
+                                                               difCantidad, "", "", oRs.Fields.Item("U_almacen").Value.ToString(), oRs.Fields.Item("U_NmDocEnt").Value.ToString(), oRs.Fields.Item("NumDoc2").Value.ToString(), oRs.Fields.Item("U_TpDocEnt").Value.ToString());
+                                                            }
+                                                            //UpdateTablalotes(ref Lotes, "E", oRs.Fields.Item("Name").Value.ToString(), oRs.Fields.Item("TipDoc").Value.ToString(), oRs.Fields.Item("NumDoc").Value.ToString(), lote,
+                                                            //                                                           difCantidad, cantidadContada, oRs.Fields.Item("U_FchVenLt").Value.ToString(), oRs.Fields.Item("U_FchAdmLt").Value.ToString(), oRs.Fields.Item("U_almacen").Value.ToString(), oRs.Fields.Item("U_NmDocEnt").Value.ToString(), oRs.Fields.Item("NumDoc2").Value.ToString(), oRs1.Fields.Item(0).Value, oRs.Fields.Item("U_TpDocEnt").Value.ToString());
+                                                            //DeleteCodesEntradasLoteDuplicados(ref Lotes, oRs1.Fields.Item(0).Value.ToString(), oRs.Fields.Item("Name").Value.ToString(), oRs.Fields.Item("U_almacen").Value.ToString(), lote);
+                                                        }
+                                                        else
+                                                        {
+                                                            deleteLotetableTemp(oRs.Fields.Item("Name").Value.ToString(), oRs.Fields.Item("NumDoc").Value.ToString(), oRs.Fields.Item("U_almacen").Value.ToString(), lote);
+                                                        }
+
+
+
+                                                        /*
+                                                        if (difCantidad < 0)
+                                                        {
+                                                            // la cantidad del lote contado es mayor a la cantidad del lote en la entrada debe hacer update de la cantidad  del lote
+                                                            
+
+
+                                                            AddTablalotes(ref Lotes, "E", oRs.Fields.Item("Name").Value.ToString(), oRs.Fields.Item("TipDoc").Value.ToString(), oRs.Fields.Item("NumDoc").Value.ToString(), lote,
+                                                            Math.Abs(difCantidad), oRs.Fields.Item("U_FchVenLt").Value.ToString(), oRs.Fields.Item("U_FchAdmLt").Value.ToString(), oRs.Fields.Item("U_almacen").Value.ToString(), oRs.Fields.Item("U_NmDocEnt").Value.ToString(), oRs.Fields.Item("NumDoc2").Value.ToString(), "");
+                                                            
+                                                            break;
+                                                        }
+                                                        else if (difCantidad > 0)
+                                                        {
+
+                                                            // la cantidad del lote contado es menor a la cantidad del lote en la entrada, debo hacer un update al lote por la cantidad contada y sacar la cantdiad restante en la tabla de salidas
+
+                                                            Sb.Clear();
+                                                            querylotes = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.UpdateInfoLotesContados.sql")).ReadToEnd();
+                                                            querylotes = Sb.AppendFormat(querylotes, oRs.Fields.Item("Name").Value.ToString(), lote, oRs.Fields.Item("U_almacen").Value.ToString(), cantidadContada).ToString();
+                                                            oRs1.DoQuery(querylotes);
+
+                                                            AddTablalotes(ref Lotes, "S", oRs.Fields.Item("Name").Value.ToString(), oRs.Fields.Item("TipDoc").Value.ToString(), oRs.Fields.Item("NumDoc").Value.ToString(), lote,
+                                                               difCantidad, "", "", oRs.Fields.Item("U_almacen").Value.ToString(), oRs.Fields.Item("U_NmDocEnt").Value.ToString(), oRs.Fields.Item("NumDoc2").Value.ToString(), oRs.Fields.Item("U_TpDocEnt").Value.ToString());
+                                                            break;
+                                                        }
+                                                        else
+                                                        {
+                                                            
+                                                        }*/
+                                                    }
+                                                    oRs.MoveNext();
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+
+                        Sb.Clear();
+                        System.Console.WriteLine(oEditText.String);
+
+                    }
+                }
+
+                //////////////////////////////////////////////
+                ///
+                /*
+                                query = string.Join(" UNION ALL ", ItemsConteo);
+
+                                if (oRs == null)
+                                {
+                                    oApp.StatusBar.SetText("Error en llamado de conteo temporal, para cargar datos en tabla de salidad o entradas", BoMessageTime.bmt_Short, BoStatusBarMessageType.smt_Error);
+                                    return false;
+                                }
+                                else
+                                {
+                                    oRs.MoveFirst();
+
+
+
+                                    for (int i = 1; i <= oRs.RecordCount; i++)
+                                    {
+
+
+
+
+
+                                        oRs.MoveNext();
+                                    }
+
+                                }
+
+
+
+                                //update de tabla de creacion lotes para descontar las cantidades por lote.
+                                UpdateTablaEntradaLotes(ListaUpdateEntrada);
+                                DeleteConteos(ListaDeleteConteo);
+                */
+                return res;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en crear lotes de articulos con lote Conteo, {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                Ini.ReleaseCOMObjetc(Lotes);
+                Ini.ReleaseCOMObjetc(oRs);
+                Ini.ReleaseCOMObjetc(oRs1);
+                Ini.ReleaseCOMObjetc(LineasContabilizacion);
+                Ini.ReleaseCOMObjetc(oEditText);
+                Ini.ReleaseCOMObjetc(oAlmacen);
+                Ini.ReleaseCOMObjetc(oDocNum);
+                Ini.ReleaseCOMObjetc(oDocNumConteo);
+                Ini.ReleaseCOMObjetc(RowNumber);
+
+            }
+        }
+
+        private void DeleteCodesEntradasLoteDuplicados(ref UserTable Lotes, string Code, string Item, string almacen, string lote)
+        {
+            SAPbobsCOM.Recordset oRs = null;
+            string query = string.Empty;
+            var Sb = new System.Text.StringBuilder();
+
+            try
+            {
+                oRs = (SAPbobsCOM.Recordset)oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+
+                Sb.Clear();
+                query = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.DeleteLotesDuplicados.sql")).ReadToEnd();
+                query = Sb.AppendFormat(query, Item, lote, almacen, Code).ToString();
+                oRs.DoQuery(query);
+
+                if (oRs != null)
+                {
+                    oRs.MoveFirst();
+
+                    for (int j = 1; j <= oRs.RecordCount; j++)
+                    {
+                        Lotes = oCompany.UserTables.Item("CLC_LTS");
+                        string index = oRs.Fields.Item("Code").Value.ToString();
+                        if (Lotes.GetByKey(index))
+                        {
+                            var delete = Lotes.Remove();
+                            if (delete.Equals(0))
+                            {
+                                Console.WriteLine($"Datos de lote duplicado eliminado en tabla entradas lotes exitosamente {Item} - {lote} - {almacen} - {oRs.Fields.Item("Code").Value.ToString()}");
+                            }
+                        }
+
+                        oRs.MoveNext();
+                    }
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en DeleteCodesEntradasLoteDuplicados, {ex.Message}");
+                return;
+            }
+            finally
+            {
+                Ini.ReleaseCOMObjetc(oRs);
+            }
+        }
+
+        private void UpdateTablalotes(ref UserTable Lotes, string TipoConteo, string Item, string TipDoc, string NumDoc, string lote, double difCantidad, double cantidadContada, string FchVenLt, string FchAdmLt, string almacen, string NmDocEnt, string NumDoc2, object Code, string TpDocEnt)
+        {
+            try
+            {
+                Lotes = oCompany.UserTables.Item("CLC_LTS");
+
+                if (Lotes.GetByKey(Code.ToString()))
+                {
+                    Lotes.UserFields.Fields.Item("U_CantLote").Value = cantidadContada;
+                    if (Lotes.Update().Equals(0))
+                    {
+                        Console.WriteLine($"Datos actualizados en tabla entradas lotes exitosamente {Item} - {TipDoc} - {NumDoc} - {lote}");
+                        deleteLotetableTemp(Item, NumDoc2, almacen, lote);
+
+
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Error al actualizar datos en tabla entrada de lotes. {oCompany.GetLastErrorDescription()}. {Item} - {TipDoc} - {NumDoc} - {lote}");
+                    }
+
+                }
+
+                if (difCantidad > 0)
+                {
+                    AddTablalotes(ref Lotes, "S", Item, TipDoc, NumDoc, lote, difCantidad, "", "", almacen, NmDocEnt, NumDoc2, TpDocEnt, false);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en UpdateTablalotes, {ex.Message}");
+                return;
+            }
+        }
+
+        private void AddTablalotes(ref SAPbobsCOM.UserTable Lotes, string tipo, string Item, string TipDoc, string NumDoc, string U_NumLot, object U_CantLote, string U_FchVenLt, string U_FchAdmLt, string U_almacen, string U_NmDocEnt, string NumDoc2Salidas, string U_TpDocEnt, bool update = true)
+        {
+            try
+            {
+                if (tipo.Equals("E"))
+                {
+                    Lotes = oCompany.UserTables.Item("CLC_LTS");
+
+                    Lotes.Name = Item;
+                    Lotes.UserFields.Fields.Item("U_TipDoc").Value = TipDoc;
+                    Lotes.UserFields.Fields.Item("U_NumDoc").Value = NumDoc;
+                    Lotes.UserFields.Fields.Item("U_NumLot").Value = U_NumLot;
+                    Lotes.UserFields.Fields.Item("U_CantLote").Value = U_CantLote;
+                    Lotes.UserFields.Fields.Item("U_FchVenLt").Value = U_FchVenLt;
+                    Lotes.UserFields.Fields.Item("U_FchAdmLt").Value = DateTime.Now;
+                    Lotes.UserFields.Fields.Item("U_almacen").Value = U_almacen;
+
+                    if (Lotes.Add().Equals(0))
+                    {
+                        Console.WriteLine($"Datos agregados a tabla entradas lotes exitosamente {Item} - {TipDoc} - {NumDoc} - {U_NumLot}");
+                        deleteLotetableTemp(Item, NumDoc2Salidas, U_almacen, U_NumLot);
+
+
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Error al agregar datos a tabla entrada de lotes. {oCompany.GetLastErrorDescription()}. {Item} - {TipDoc} - {NumDoc} - {U_NumLot}");
+                    }
+                }
+                else
+                {
+                    Lotes = oCompany.UserTables.Item("CLC_LTSSA");
+
+                    Lotes.Name = Item;
+                    Lotes.UserFields.Fields.Item("U_TipDoc").Value = TipDoc;
+                    Lotes.UserFields.Fields.Item("U_NumDoc").Value = NumDoc;
+                    Lotes.UserFields.Fields.Item("U_NumLot").Value = U_NumLot;
+                    Lotes.UserFields.Fields.Item("U_Cantidad").Value = U_CantLote;
+                    Lotes.UserFields.Fields.Item("U_FchSal").Value = DateTime.Now;
+                    Lotes.UserFields.Fields.Item("U_almacen").Value = U_almacen;
+
+                    if (Lotes.Add().Equals(0))
+                    {
+                        Console.WriteLine($"Datos agregados a tabla salidas lotes exitosamente {Item} - {TipDoc} - {NumDoc} - {U_NumLot}");
+                        deleteLotetableTemp(Item, NumDoc2Salidas, U_almacen, U_NumLot);
+
+
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Error al agregar datos a tabla salidas de lotes. {oCompany.GetLastErrorDescription()}. {Item} - {TipDoc} - {NumDoc} - {U_NumLot}");
+
+                    }
+
+                    if (update)
+                    {
+                        //Agregar a la lista de update los valores de cada linea
+                        UpdateCantidadLoteTablaEntrada(Item, U_CantLote, U_TpDocEnt, U_NmDocEnt, U_NumLot, U_almacen);
+                    }
+
+
+
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" error en AddTablalotes {ex.ToString()}"); return;
+            }
+            finally
+            {
+
+            }
+
+
+        }
+
+        private void UpdateCantidadLoteTablaEntrada(string item, object u_CantLote, string u_TpDocEnt, string u_NmDocEnt, string u_NumLot, string u_almacen)
+        {
+            var Sb = new System.Text.StringBuilder();
+            string queryUpdate = string.Empty;
+
+            SAPbobsCOM.Recordset oRs = null;
+            try
+            {
+                Sb.Clear();
+                oRs = (SAPbobsCOM.Recordset)oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+
+                queryUpdate = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.UpdateInfoConteo.sql")).ReadToEnd();
+                queryUpdate = Sb.AppendFormat(queryUpdate, u_CantLote, item, u_TpDocEnt, u_NmDocEnt, u_NumLot, u_almacen).ToString();
+
+                oRs.DoQuery(queryUpdate);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en updtae lotes entradas Conteo, {ex.Message}");
+            }
+            finally
+            {
+                Ini.ReleaseCOMObjetc(oRs);
+
+            }
+        }
+
+        private void deleteLotetableTemp(string item, string NumDoc, string u_almacen, string U_NumLot)
+        {
+            var Sb = new System.Text.StringBuilder();
+            string queryDelete = string.Empty;
+
+            SAPbobsCOM.Recordset oRs = null;
+            try
+            {
+                Sb.Clear();
+                oRs = (SAPbobsCOM.Recordset)oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+
+                queryDelete = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{Assembly.GetExecutingAssembly().GetName().Name}.Querys.DeleteConteo.sql")).ReadToEnd();
+                queryDelete = Sb.AppendFormat(queryDelete, item, NumDoc, u_almacen, U_NumLot).ToString();
+
+                oRs.DoQuery(queryDelete);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en delete lotes temp Conteo, {ex.Message}");
+            }
+            finally
+            {
+                Ini.ReleaseCOMObjetc(oRs);
+
+            }
+
+        }
+
+        private void DeleteConteos(List<string> listaDeleteConteo)
+        {
+            SAPbobsCOM.Recordset oRs = null;
+            try
+            {
+                oRs = (SAPbobsCOM.Recordset)oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+                foreach (var lista in listaDeleteConteo)
+                {
+                    oRs.DoQuery(lista);
+                    if (oRs == null)
+                    {
+                        Console.WriteLine("Error al ejecutar recordset de delete Conteo");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Exito al ejecutar recordset de delete Conteo");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en delete lotes temp Conteo, {ex.Message}");
+            }
+            finally
+            {
+                Ini.ReleaseCOMObjetc(oRs);
+            }
+        }
+
+        internal void AddLine(ItemEvent pVal)
+        {
+            SAPbouiCOM.Form oForm = null;
+            DataTable DT_Crear = null;
+            Grid grid_Crear = null;
+
+
+            try
+            {
+                oForm = oApp.Forms.Item(pVal.FormUID);
+                if (oForm.Items.Item("BtAddln").Enabled.Equals(false)) return;
+
+                oForm.Freeze(true);
+                DT_Crear = (DataTable)oForm.DataSources.DataTables.Item("DTCrea");
+                grid_Crear = (Grid)oForm.Items.Item("GrdCrear").Specific;
+
+
+
+                DT_Crear.Rows.Add();
+                DT_Crear.SetValue("ItemCode", grid_Crear.Rows.Count - 1, DT_Crear.GetValue("ItemCode", grid_Crear.Rows.Count - 2));
+                DT_Crear.SetValue("Cantidad", grid_Crear.Rows.Count - 1, DT_Crear.GetValue("Cantidad", grid_Crear.Rows.Count - 2));
+                DT_Crear.SetValue("Fecha vence", grid_Crear.Rows.Count - 1, DT_Crear.GetValue("Fecha vence", grid_Crear.Rows.Count - 2));
+                DT_Crear.SetValue("Fecha Admin", grid_Crear.Rows.Count - 1, DT_Crear.GetValue("Fecha Admin", grid_Crear.Rows.Count - 2));
+                DT_Crear.SetValue("Tipo doc", grid_Crear.Rows.Count - 1, DT_Crear.GetValue("Tipo doc", grid_Crear.Rows.Count - 2));
+                DT_Crear.SetValue("Num Doc", grid_Crear.Rows.Count - 1, DT_Crear.GetValue("Num Doc", grid_Crear.Rows.Count - 2));
+                DT_Crear.SetValue("Almacen", grid_Crear.Rows.Count - 1, DT_Crear.GetValue("Almacen", grid_Crear.Rows.Count - 2));
+                DT_Crear.SetValue("NumLinea", grid_Crear.Rows.Count - 1, DT_Crear.GetValue("NumLinea", grid_Crear.Rows.Count - 2));
+
+                grid_Crear.Columns.Item("Numero lote").Editable = true;
+                grid_Crear.Columns.Item("Cantidad disponible").Editable = true;
+                grid_Crear.Columns.Item("Fecha vence").Editable = true;
+                grid_Crear.Columns.Item("Fecha Admin").Editable = true;
+                grid_Crear.Columns.Item("Almacen").Editable = true;
+
+            }
+            catch (Exception ex)
+            {
+                oForm.Freeze(false);
+                Console.WriteLine($"Error en agregar línea {ex.Message}");
+
+            }
+            finally
+            {
+                oForm.Freeze(false);
+                Ini.ReleaseCOMObjetc(oForm);
+                Ini.ReleaseCOMObjetc(DT_Crear);
+                Ini.ReleaseCOMObjetc(grid_Crear);
+            }
+        }
+
+        internal void DeleteRow(ItemEvent pVal)
+        {
+            DataTable DTCrear = null;
+            SAPbouiCOM.Form oForm = null;
+
+
+
+            try
+            {
+                oForm = oApp.Forms.Item(pVal.FormUID);
+                DTCrear = (SAPbouiCOM.DataTable)oForm.DataSources.DataTables.Item("DTCrea");
+
+                for (int i = 0; i < DTCrear.Rows.Count; i++)
+                {
+                    if (DTCrear.GetValue("Sel", i).Equals("Y"))
+                    {
+                        DTCrear.Rows.Remove(i);
+                        if (ListaConteo.Any())
+                        {
+                            ListaConteo.RemoveAt((int)DTCrear.GetValue("Index", i));
+
+                        }
+
+                    }
+                }
+
+                if (DTCrear.IsEmpty)
+                {
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en  DeleteRow de articulos con lote entrada, {ex.Message}");
+            }
+            finally
+            {
+                Ini.ReleaseCOMObjetc(DTCrear);
+                Ini.ReleaseCOMObjetc(oForm);
+
+
             }
 
         }

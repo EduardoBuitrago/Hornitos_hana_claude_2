@@ -202,5 +202,26 @@
   <ItemGroup>
     <EmbeddedResource Include="Querys\LotesSalidaConteo.sql" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Querys\DeleteConteo.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Querys\DeleteLotesDuplicados.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Querys\GetCodeEntradas.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Querys\InfoConteo.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Querys\InfoSinlotes.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Querys\loteEncontradoEntrada.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Querys\lotestablaentrada.sql" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

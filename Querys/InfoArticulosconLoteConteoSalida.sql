@@ -1,20 +1,22 @@
 SELECT
     'N' AS "Sel",
-    T0."Name"       AS "ItemCode",
-    T0."U_TipDoc"   AS "Tipo doc",
-    T0."U_NumDoc"   AS "Num Doc",
-    T0."U_NumLot"   AS "Numero lote",
-    T0."U_CantLote" AS "Cantidad disponible",
-    CAST((0) AS DOUBLE) AS "Cantidad",
-    T0."U_FchVenLt" AS "Fecha vence",
-    T0."U_FchAdmLt" AS "Fecha Admin",
-    T0."U_almacen"  AS "Almacen",
+    MAX(T0."Name") AS "ItemCode",
+    MAX(T0."U_TipDoc") AS "Tipo doc",
+    MAX(T0."U_NumDoc") AS "Num Doc",
+    T0."U_NumLot" AS "Numero lote",
+    SUM(T0."U_CantLote") AS "Cantidad disponible",
+    CAST(0 AS DECIMAL(19,6)) AS "Cantidad",
+    MAX(T0."U_FchVenLt") AS "Fecha vence",
+    MAX(T0."U_FchAdmLt") AS "Fecha Admin",
+    MAX(T0."U_almacen") AS "Almacen",
     '' AS "Index",
-    0 AS "NumLinea"
+    {2} AS "NumLinea"
 FROM "@CLC_LTS" T0
-WHERE 
+WHERE
     T0."Name" = '{0}'
     AND T0."U_CantLote" > 0
     AND T0."U_almacen" = '{1}'
-ORDER BY 
-    T0."U_FchVenLt"
+GROUP BY
+    T0."U_NumLot"
+ORDER BY
+    MAX(T0."U_FchVenLt");
